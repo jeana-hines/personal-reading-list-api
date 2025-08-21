@@ -1,0 +1,445 @@
+basePath: /api/v1
+definitions:
+  handlers.ArticleSubmissionRequest:
+    properties:
+      url:
+        example: https://example.com/article
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      message:
+        example: An error occurred
+        type: string
+    type: object
+  handlers.LoginUserRequest:
+    properties:
+      password:
+        example: verysecurepassword
+        type: string
+      username:
+        example: testuser
+        type: string
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        example: Success message
+        type: string
+    type: object
+  handlers.RegisterUserRequest:
+    properties:
+      password:
+        example: verysecurepassword
+        type: string
+      username:
+        example: testuser@example.com
+        type: string
+    type: object
+  handlers.UpdateArticleStatusRequest:
+    properties:
+      status:
+        enum:
+        - read
+        - unread
+        - processing
+        - ' failed'
+        example: read
+        type: string
+    type: object
+  handlers.UpdateArticleTagRequest:
+    properties:
+      tags:
+        example:
+        - '["tag1"'
+        - '"tag2"]'
+        items:
+          type: string
+        type: array
+    type: object
+  models.Article:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      status:
+        description: '"processing", "failed", "read", or "unread"'
+        type: string
+      summary:
+        description: omitempty will hide if empty
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API for managing personalized reading lists, with summarization and
+    tagging.
+  title: Personal Reading List API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Checks if the API is up and running.
+      operationId: health-check
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Show API health status
+  /articles:
+    get:
+      description: Retrieves all articles associated with a user.
+      operationId: get-articles-by-user
+      parameters:
+      - description: Filter by article status (e.g., read, unread)
+        in: query
+        name: status
+        type: string
+      - description: Filter by article tag
+        in: query
+        name: tag
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of articles
+          schema:
+            items:
+              $ref: '#/definitions/models.Article'
+            type: array
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all articles for a user
+    post:
+      consumes:
+      - application/json
+      description: Submits a new article to the reading list.
+      operationId: submit-article
+      parameters:
+      - description: Article submission details
+        in: body
+        name: article
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ArticleSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Article submitted successfully
+          schema:
+            $ref: '#/definitions/models.Article'
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Submit a new article
+  /articles/{id}:
+    delete:
+      description: Deletes an article by its ID.
+      operationId: delete-article-by-id
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Article deleted successfully
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: 'Forbidden: Article not owned by user'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Delete an article by ID
+    get:
+      description: Retrieves an article by its ID.
+      operationId: get-article-by-id
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article retrieved successfully
+          schema:
+            $ref: '#/definitions/models.Article'
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get an article by ID
+  /articles/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Updates the status of an existing article.
+      operationId: update-article-status
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New status for the article
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateArticleStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status updated successfully
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: 'Forbidden: Article not owned by user'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update an article's status
+  /articles/{id}/tags:
+    put:
+      consumes:
+      - application/json
+      description: Updates the tags of an existing article.
+      operationId: update-article-tags
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New tags for the article
+        in: body
+        name: tags
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateArticleTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tags updated successfully
+          schema:
+            $ref: '#/definitions/handlers.MessageResponse'
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: 'Forbidden: Article not owned by user'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Update an article's tags
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user with username and password.
+      operationId: login-user
+      parameters:
+      - description: User login details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User logged in successfully
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Invalid username or password
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Login a user
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logs out a user by invalidating their JWT.
+      operationId: logout-user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User logged out successfully
+          schema:
+            type: string
+        "401":
+          description: Unauthorized - Invalid token format or claims
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Logout a user
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with a unique email address and hashed
+        password.
+      operationId: register-user
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid request payload or missing fields
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "409":
+          description: Username already exists
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Register a new user
+  /tags:
+    get:
+      description: Retrieves all unique tags associated with articles for a user.
+      operationId: get-tags-by-user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tags
+          schema:
+            items:
+              type: string
+            type: array
+        "401":
+          description: 'Unauthorized: User ID not found'
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Get all tags for a user
+swagger: "2.0"

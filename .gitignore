@@ -1,0 +1,36 @@
+# Go build artifacts
+*.exe
+*.dll
+*.so
+*.darwin
+*.windows
+*.linux
+*.test
+*.prof
+
+# Module cache
+/go.sum
+/vendor/
+
+# IDE specific files
+.idea/        # IntelliJ/GoLand
+.vscode/      # VS Code
+*.sublime-project
+*.sublime-workspace
+
+# macOS and Windows specific files
+.DS_Store
+Thumbs.db
+
+# API documentation: Hugo files
+
+
+/docs-project/
+
+
+# Log files
+*.log
+
+# Notes
+*.docx
+*.pdf

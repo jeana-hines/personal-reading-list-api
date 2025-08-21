@@ -1,0 +1,6 @@
+[submodule "themes/docsy"]
+	path = themes/docsy
+	url = https://github.com/google/docsy.git
+[submodule "apidocs/themes/docsy"]
+	path = apidocs/themes/docsy
+	url = https://github.com/google/docsy.git
